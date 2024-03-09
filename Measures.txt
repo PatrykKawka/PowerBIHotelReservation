@@ -1,0 +1,65 @@
+Przychód = 
+SUMX (
+    fact_rezerwacje,
+    fact_rezerwacje[Liczba_Gosci] * fact_rezerwacje[Długość rezerwacji (dni)]
+        * RELATED ( dim_pokoje[Cena_za_dobe_za_osobe] )
+)
+
+Przychód PY = 
+VAR poprzednirok = DATEADD(dim_Calendar[Date],-1,YEAR)
+
+RETURN
+CALCULATE([Przychód], poprzednirok)
+
+Przychód YTD = 
+TOTALYTD ( [Przychód], dim_Calendar[Date] )
+
+Przychód zgodnie z terminem rezerwacji = 
+CALCULATE (
+    [Przychód],
+    USERELATIONSHIP ( fact_rezerwacje[Data rezerwacji], dim_Calendar[Date] )
+)
+
+Przychód zgodnie z terminem wymeldowania = 
+CALCULATE (
+    [Przychód],
+    USERELATIONSHIP ( fact_rezerwacje[Data wymeldowania], dim_Calendar[Date] )
+)
+
+Zysk = 
+SUMX (
+    fact_rezerwacje,
+    ( fact_rezerwacje[Liczba_Gosci] * fact_rezerwacje[Długość rezerwacji (dni)] )
+        * (
+            RELATED ( dim_pokoje[Cena_za_dobe_za_osobe] )
+                - RELATED ( dim_pokoje[Dzienny_koszt_utrzymania] )
+        )
+)
+
+% Przychodu (kraj) = DIVIDE([Przychód], CALCULATE([Przychód], ALL(dim_hotel[Lokalizacja_Hotelu])))
+
+Ilość rezerwacji = 
+DISTINCTCOUNT ( fact_rezerwacje[ID_Rezerwacji] )
+
+Stosunek przychodu do poprzedniego roku = 
+VAR aktualnyrok =
+    YEAR(TODAY())
+VAR poprzednirok =
+    aktualnyrok-1
+VAR Wzrost =
+    DIVIDE (
+        CALCULATE ( [Przychód], YEAR ( dim_Calendar[Date] ) = aktualnyrok ),
+        CALCULATE ( [Przychód], YEAR ( dim_Calendar[Date] ) = poprzednirok )
+    )
+RETURN
+    Wzrost-1
+
+Podsumowanie danych wg kraju = "Podsumowanie danych w wybranym kraju: " & SELECTEDVALUE(dim_hotel[Kraj])
+
+Tytuł strony wg daty = "Analiza przychodu sieci hoteli według daty " & CONCATENATEX('prm_Przychód', 'prm_Przychód'[prm_Przychód], ",")
+
+Tytuł_strony_kraj = "Analiza biznesowa działalności hotelu w wybranym kraju: "& SELECTEDVALUE(dim_hotel[Kraj])
+
+Wartość przychodu/zysku/kosztów utrzymania = "Wartość przychodu, zysku i kosztu utrzymania w czasie w kraju: " & SELECTEDVALUE(dim_hotel[Kraj])
+
+Dynamiczny typ wykresu = CONCATENATEX('prm_Przychód_Zysk_koszty', 'prm_Przychód_Zysk_koszty'[prm_Przychód_Zysk_koszty]) & " według " & CONCATENATEX('prm_Kanał/pakiet', 'prm_Kanał/pakiet'[prm_Kanał/pakiet])

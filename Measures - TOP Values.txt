@@ -1,0 +1,10 @@
+ID transakcji najwyższej = 
+MAXX(
+    TOPN(1, VALUES('fact_rezerwacje'[ID_Rezerwacji]), [Zysk], DESC),
+    'fact_rezerwacje'[ID_Rezerwacji]
+) 
+
+NajwyższaKwotaTransakcji = 
+CALCULATE(
+MAXX(fact_rezerwacje,[Zysk]
+), TOPN(1, fact_rezerwacje))
